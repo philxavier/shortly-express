@@ -24,59 +24,75 @@ app.use(express.static(__dirname + '/public'));
 
 
 app.get('/', 
-function(req, res) {
-  res.render('index');
-});
+  function(req, res) {
+    res.render('index');
+    
+  });
 
 app.get('/create', 
-function(req, res) {
-  res.render('index');
-});
+  function(req, res) {
+    res.render('index');
+  });
 
 app.get('/links', 
-function(req, res) {
-  Links.reset().fetch().then(function(links) {
-    res.status(200).send(links.models);
+  function(req, res) {
+    Links.reset().fetch().then(function(links) {
+      res.status(200).send(links.models);
+    });
   });
-});
 
 app.post('/links', 
-function(req, res) {
-  var uri = req.body.url;
+  function(req, res) {
+    var uri = req.body.url;
 
-  if (!util.isValidUrl(uri)) {
-    console.log('Not a valid url: ', uri);
-    return res.sendStatus(404);
-  }
-
-  new Link({ url: uri }).fetch().then(function(found) {
-    if (found) {
-      res.status(200).send(found.attributes);
-    } else {
-      util.getUrlTitle(uri, function(err, title) {
-        if (err) {
-          console.log('Error reading URL heading: ', err);
-          return res.sendStatus(404);
-        }
-
-        Links.create({
-          url: uri,
-          title: title,
-          baseUrl: req.headers.origin
-        })
-        .then(function(newLink) {
-          res.status(200).send(newLink);
-        });
-      });
+    if (!util.isValidUrl(uri)) {
+      console.log('Not a valid url: ', uri);
+      return res.sendStatus(404);
     }
+
+    new Link({ url: uri }).fetch().then(function(found) {
+      if (found) {
+        res.status(200).send(found.attributes);
+      } else {
+        util.getUrlTitle(uri, function(err, title) {
+          if (err) {
+            console.log('Error reading URL heading: ', err);
+            return res.sendStatus(404);
+          }
+
+          Links.create({
+            url: uri,
+            title: title,
+            baseUrl: req.headers.origin
+          })
+            .then(function(newLink) {
+              res.status(200).send(newLink);
+            });
+        });
+      }
+    });
   });
-});
 
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
 
+app.get('/login', 
+  function(req, res) {
+    res.render('login');
+  });
 
+app.get('/signup', 
+  function(req, res) {
+    res.render('signup');
+  });
+
+app.post('/signup',
+  function(req, res) {
+    var username = req.body.username;
+
+    console.log(req.body);
+  });
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
