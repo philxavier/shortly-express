@@ -10,6 +10,7 @@ var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
+var bcrypt = require('bcrypt-nodejs');
 
 var app = express();
 
@@ -81,6 +82,54 @@ app.get('/login',
   function(req, res) {
     res.render('login');
   });
+
+app.post('/login', 
+  function(req, res) {
+    var providedLoginName = req.body.username;
+    var providedLoginPassword = req.body.password;
+    console.log('');
+
+    new User({username: providedLoginName})
+      .fetch()
+      .then(function(model) {
+        var foundPassword = model.get('password');
+        console.log('foundPassword =================', foundPassword );
+      })
+      .then(function() {
+ bcrypt.compare(providedLoginPassword, foundPassword, function() {
+        console.log('heelo ');
+      })
+ ;});
+
+
+    // .then(bcrypt.compare(foundPassword, providedLoginPassword, function (err, result) {
+    //   if (result == true) {
+    //     console.log('yes, they are the same==================');
+    //   } else {
+    //     res.send('Incorrect password');
+    //   }
+    // }));
+      
+
+
+
+    // User.findOne({
+    //   where: {
+    //     username: providedLoginName
+    //   }
+    // }).then(function (user) {
+    //   if (!user) {
+    //     console.log('not found=================');
+    //   } else {
+    //     console.log('here it is========================');
+    //   }
+    // });
+  });
+
+
+  
+
+
 
 app.get('/signup', 
   function(req, res) {
