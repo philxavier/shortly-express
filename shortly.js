@@ -89,9 +89,20 @@ app.get('/signup',
 
 app.post('/signup',
   function(req, res) {
-    var username = req.body.username;
+    var providedUsername = req.body.username;
+    var providedPassword = req.body.password;
 
-    console.log(req.body);
+    console.log('user:', req.body);
+    new User({username: req.body.username, password: req.body.password}).fetch().then(function(found) {
+      if (found) {
+        console.log('yes found--------------------');
+      } else {
+        Users.create({
+          username: providedUsername,
+          password: providedPassword
+        });
+      }      
+    });
   });
 
 /************************************************************/
