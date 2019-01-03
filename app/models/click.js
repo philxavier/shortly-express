@@ -1,3 +1,4 @@
+
 var db = require('../config');
 var Link = require('./link.js');
 

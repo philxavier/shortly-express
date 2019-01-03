@@ -25,9 +25,11 @@
     "express": "^4.13.4",
     "express-partials": "^0.3.0",
     "express-session": "^1.13.0",
+    "install": "^0.12.2",
     "knex": "^0.10.0",
+    "npm": "^6.5.0",
     "request": "^2.34.0",
-    "sqlite3": "^4.0.4"
+    "sqlite3": "https://github.com/mapbox/node-sqlite3/tarball/master"
   },
   "devDependencies": {
     "babel-cli": "^6.7.5",

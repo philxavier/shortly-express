@@ -11,6 +11,7 @@ var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 var bcrypt = require('bcrypt-nodejs');
+var session = require('express-session');
 
 var app = express();
 
@@ -23,15 +24,18 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+app.use(session({secret: 'Shh, its a secret!'}));
 
 app.get('/', 
   function(req, res) {
     res.render('index');
-    
   });
 
 app.get('/create', 
   function(req, res) {
+    if (!req.session.isLogged) {
+      res.redirect('/');
+    }
     res.render('index');
   });
 
@@ -45,6 +49,7 @@ app.get('/links',
 app.post('/links', 
   function(req, res) {
     var uri = req.body.url;
+    console.log('body is here ==============', req.body);
 
     if (!util.isValidUrl(uri)) {
       console.log('Not a valid url: ', uri);
@@ -52,7 +57,9 @@ app.post('/links',
     }
 
     new Link({ url: uri }).fetch().then(function(found) {
+      //console.log('new link has been added');
       if (found) {
+        //console.log('this was found ');
         res.status(200).send(found.attributes);
       } else {
         util.getUrlTitle(uri, function(err, title) {
@@ -60,7 +67,6 @@ app.post('/links',
             console.log('Error reading URL heading: ', err);
             return res.sendStatus(404);
           }
-
           Links.create({
             url: uri,
             title: title,
@@ -78,6 +84,14 @@ app.post('/links',
 // Write your authentication routes here
 /************************************************************/
 
+var isAuthenticated = function(req, res, next) {
+ 
+  if (req.user.authenticated) { return next(); }
+
+  res.redirect('/');
+};
+
+
 app.get('/login', 
   function(req, res) {
     res.render('login');
@@ -87,49 +101,21 @@ app.post('/login',
   function(req, res) {
     var providedLoginName = req.body.username;
     var providedLoginPassword = req.body.password;
-    console.log('');
-
     new User({username: providedLoginName})
       .fetch()
-      .then(function(model) {
-        var foundPassword = model.get('password');
-        console.log('foundPassword =================', foundPassword );
-      })
-      .then(function() {
- bcrypt.compare(providedLoginPassword, foundPassword, function() {
-        console.log('heelo ');
-      })
- ;});
-
-
-    // .then(bcrypt.compare(foundPassword, providedLoginPassword, function (err, result) {
-    //   if (result == true) {
-    //     console.log('yes, they are the same==================');
-    //   } else {
-    //     res.send('Incorrect password');
-    //   }
-    // }));
-      
-
-
-
-    // User.findOne({
-    //   where: {
-    //     username: providedLoginName
-    //   }
-    // }).then(function (user) {
-    //   if (!user) {
-    //     console.log('not found=================');
-    //   } else {
-    //     console.log('here it is========================');
-    //   }
-    // });
+      .then(function(model) { //second argument is the hash
+        bcrypt.compare(providedLoginPassword, model.get('password'), function(err, result) {
+          if (result === true) {
+            //req.session.isLogged = true;
+            //console.log('session is here ========================', req.session);
+            res.redirect('/');
+          } else {
+            res.statusMessage = 'Current password does not match';
+            res.redirect('/login');
+          }
+        });
+      }); 
   });
-
-
-  
-
-
 
 app.get('/signup', 
   function(req, res) {
@@ -140,18 +126,19 @@ app.post('/signup',
   function(req, res) {
     var providedUsername = req.body.username;
     var providedPassword = req.body.password;
-
-    console.log('user:', req.body);
-    new User({username: req.body.username, password: req.body.password}).fetch().then(function(found) {
-      if (found) {
-        console.log('yes found--------------------');
-      } else {
-        Users.create({
-          username: providedUsername,
-          password: providedPassword
-        });
-      }      
-    });
+    User.where('username', req.body.username)
+      .fetch()
+      .then(function(found) {
+        if (found) {
+          res.redirect('/login');
+        } else {
+          Users.create({
+            username: providedUsername,
+            password: providedPassword
+          });
+          res.redirect('/');
+        }      
+      });
   });
 
 /************************************************************/

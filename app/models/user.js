@@ -19,6 +19,9 @@ var User = db.Model.extend({
         }
       });
     });
+  },
+  link: function() {
+    return this.hasMany(Link);
   }
 });
 
