@@ -12,7 +12,7 @@ var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 var bcrypt = require('bcrypt-nodejs');
 var session = require('express-session');
-
+var global = {};
 var app = express();
 
 app.set('views', __dirname + '/views');
@@ -24,42 +24,55 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
-app.use(session({secret: 'Shh, its a secret!'}));
+app.use(session({
+  secret: 'random_string_goes_here',
+}));
+
+var checkUser = function(req, res, next) {
+  if (!req.user) {
+    res.redirect('/login');
+  } else {
+    next();
+  }
+};
 
 app.get('/', 
   function(req, res) {
-    res.render('index');
+    if (!global.idLogged) {
+      res.redirect('/signup');
+    } else {
+      res.render('index');  
+    }
   });
 
 app.get('/create', 
   function(req, res) {
-    if (!req.session.isLogged) {
-      res.redirect('/');
-    }
+    console.log('req.session here-----------------', req.session);
     res.render('index');
   });
 
 app.get('/links', 
   function(req, res) {
+    if (!global.idLogged) {
+      res.redirect('/login');
+    }
+    console.log('this is req session=============', req.session);
     Links.reset().fetch().then(function(links) {
-      res.status(200).send(links.models);
+      var result = links.models.filter((ele) => ele.attributes.UserId === global.idLogged);
+      res.status(200).send(result);
     });
   });
 
 app.post('/links', 
   function(req, res) {
     var uri = req.body.url;
-    console.log('body is here ==============', req.body);
-
     if (!util.isValidUrl(uri)) {
       console.log('Not a valid url: ', uri);
       return res.sendStatus(404);
     }
 
     new Link({ url: uri }).fetch().then(function(found) {
-      //console.log('new link has been added');
       if (found) {
-        //console.log('this was found ');
         res.status(200).send(found.attributes);
       } else {
         util.getUrlTitle(uri, function(err, title) {
@@ -70,7 +83,8 @@ app.post('/links',
           Links.create({
             url: uri,
             title: title,
-            baseUrl: req.headers.origin
+            baseUrl: req.headers.origin,
+            UserId: global.idLogged
           })
             .then(function(newLink) {
               res.status(200).send(newLink);
@@ -84,12 +98,13 @@ app.post('/links',
 // Write your authentication routes here
 /************************************************************/
 
-var isAuthenticated = function(req, res, next) {
+// var isAuthenticated = function(req, res, next) {
  
-  if (req.user.authenticated) { return next(); }
+//   if (req.user.authenticated) { return next(); }
 
-  res.redirect('/');
-};
+//   res.redirect('/');
+// };
+
 
 
 app.get('/login', 
@@ -106,7 +121,10 @@ app.post('/login',
       .then(function(model) { //second argument is the hash
         bcrypt.compare(providedLoginPassword, model.get('password'), function(err, result) {
           if (result === true) {
-            //req.session.isLogged = true;
+            req.session.username = providedLoginName;
+            //console.log('this is req.session===========', req.session); 
+
+            global.idLogged = model.attributes.primary_key;
             //console.log('session is here ========================', req.session);
             res.redirect('/');
           } else {
@@ -136,7 +154,7 @@ app.post('/signup',
             username: providedUsername,
             password: providedPassword
           });
-          res.redirect('/');
+          res.redirect('/login');
         }      
       });
   });
