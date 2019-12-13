@@ -27,7 +27,7 @@
     "express-session": "^1.13.0",
     "install": "^0.12.2",
     "knex": "^0.10.0",
-    "npm": "^6.5.0",
+    "npm": "^6.13.4",
     "request": "^2.34.0",
     "sqlite3": "https://github.com/mapbox/node-sqlite3/tarball/master"
   },
